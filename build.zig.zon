@@ -7,7 +7,7 @@
             .hash = "N-V-__8AAJn_iQKpeeAdYDIPxLmQ3XVQWQEsD__dRvLzC9jf",
         },
     },
-    .fingerprint = 0xb539547bfca7ceba,
+    .fingerprint = 0x68602c624a117601,
     .minimum_zig_version = "0.16.0",
     .paths = .{
         "build.zig",

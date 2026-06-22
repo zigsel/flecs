@@ -82,13 +82,30 @@ const Gravity = struct {                             // singleton
     pub const flecs_traits: flecs.Traits = .{ .singleton = true };
 };
 
-const Mesh = struct {                                // lifecycle hooks as decls
+const Mesh = struct {
     handle: Handle,
-    pub fn onAdd(self: *Mesh) void { self.handle = acquire(); }
-    pub fn onRemove(self: *Mesh) void { self.handle.release(); }
-    pub fn deinit(self: *Mesh) void { self.handle.release(); }   // dtor hook
+    pub fn init(self: *Mesh) void { self.handle = .invalid; }         // ctor: fresh storage
+    pub fn deinit(self: *Mesh) void { self.handle.release(); }        // dtor: free owned
+    pub fn onAdd(self: *Mesh, e: flecs.Entity) void { register(e); }  // event: added to an entity
+    pub fn onSet(self: *Mesh) void { self.handle.upload(); }          // event: value was set
+    pub fn onRemove(self: *Mesh, e: flecs.Entity) void { notify(e); } // event: left an entity
 };
 ```
+
+Two kinds of hook, don't confuse them:
+
+- **`init` / `deinit` are the constructor / destructor** (storage lifetime).
+  `init(*T)` runs on fresh, zeroed storage whenever the component is added without
+  a value (`add`, `ensure`) - the place to apply defaults; `deinit` runs once when
+  the instance's memory is reclaimed (`remove`, `destroy`, `clear`, *and*
+  `world.deinit()`) - the leak-safe place to release resources.
+- **`onAdd` / `onSet` / `onRemove` are event hooks** (entity transitions). They run
+  *with* entity context, for reactive logic - not storage cleanup. Releasing the
+  same resource in both `onRemove` **and** `deinit` double-frees it; pick one.
+
+> `init` only matches `pub fn init(*T) void`; a value-returning `init` (the common
+> Zig convenience constructor) is left alone. Note flecs ignores Zig field defaults
+> on a bare `add`/`ensure` - use `init` if you need them applied.
 
 Configure traits on the type, or explicitly - every flecs trait is a field
 (`sparse`, `exclusive`, `transitive`, `cleanup`, `one_of`, `with`, …):

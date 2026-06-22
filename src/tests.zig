@@ -1700,3 +1700,24 @@ test "meta cursor read/write" {
     try rc.member("layer");
     try std.testing.expectEqual(@as(i64, 7), rc.getInt());
 }
+
+test "init constructor hook runs on add/ensure" {
+    var world = try flecs.World(.{}).init(.{});
+    defer world.deinit();
+    const Gravity = struct {
+        g: f32,
+        scale: f32,
+        pub fn init(self: *@This()) void {
+            self.g = 9.81; // partial init; `scale` stays zeroed baseline
+        }
+    };
+    // add (no value given) runs the ctor -> g is 9.81, not 0
+    const a = world.new();
+    a.add(Gravity);
+    try std.testing.expectEqual(@as(f32, 9.81), a.get(Gravity).?.g);
+    try std.testing.expectEqual(@as(f32, 0), a.get(Gravity).?.scale);
+
+    // ensure also constructs when adding
+    const b = world.new();
+    try std.testing.expectEqual(@as(f32, 9.81), b.ensure(Gravity).g);
+}

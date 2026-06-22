@@ -255,7 +255,19 @@ fn hookAction(comptime T: type, comptime func: anytype) c.ecs_iter_action_t {
     }.cb;
 }
 
+/// True only when `T` declares an `init` shaped exactly like the ctor hook -
+/// `pub fn init(*T) void`. This avoids capturing the common value-returning
+/// convenience constructor (`pub fn init(...) T`) as a hook.
+fn isCtorHook(comptime T: type) bool {
+    if (@typeInfo(T) != .@"struct" or !@hasDecl(T, "init")) return false;
+    const info = @typeInfo(@TypeOf(T.init));
+    if (info != .@"fn") return false;
+    const f = info.@"fn";
+    return f.params.len == 1 and f.params[0].type == *T and f.return_type == void;
+}
+
 /// Build the type hooks for `T` from its declarations:
+/// - `pub fn init(*T) void`                -> constructor (runs on add/ensure)
 /// - `pub fn deinit(*T) void`              -> destructor
 /// - `pub fn copy(*const T) T`             -> copy hook (else memcpy)
 /// - `pub fn onAdd(*T[, Entity]) void`     -> on_add component hook
@@ -264,6 +276,22 @@ fn hookAction(comptime T: type, comptime func: anytype) c.ecs_iter_action_t {
 fn hooksFor(comptime T: type) c.ecs_type_hooks_t {
     var hooks = std.mem.zeroes(c.ecs_type_hooks_t);
     if (isTag(T)) return hooks;
+
+    // Constructor: zero the fresh storage (flecs' default baseline), then run the
+    // user's `init` so partial initialization is still safe.
+    if (comptime isCtorHook(T)) {
+        const Tramp = struct {
+            fn ctor(ptr: ?*anyopaque, count: i32, ti: [*c]const c.ecs_type_info_t) callconv(.c) void {
+                _ = ti;
+                const n: usize = @intCast(count);
+                @memset(@as([*]u8, @ptrCast(ptr.?))[0 .. n * @sizeOf(T)], 0);
+                const items: [*]T = @ptrCast(@alignCast(ptr));
+                var i: usize = 0;
+                while (i < n) : (i += 1) items[i].init();
+            }
+        };
+        hooks.ctor = Tramp.ctor;
+    }
 
     if (@typeInfo(T) == .@"struct" and @hasDecl(T, "onAdd")) hooks.on_add = hookAction(T, T.onAdd);
     if (@typeInfo(T) == .@"struct" and @hasDecl(T, "onSet")) hooks.on_set = hookAction(T, T.onSet);
