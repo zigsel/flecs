@@ -1,5 +1,5 @@
 .{
-    .name = .zflecs,
+    .name = .flecs,
     .version = "0.1.0",
     .dependencies = .{
         .flecs = .{

@@ -1,4 +1,4 @@
-//! zflecs - idiomatic Zig bindings for the flecs ECS.
+//! flecs - idiomatic Zig bindings for the flecs ECS.
 //!
 //! Design rule: the binding translates *declarations* into flecs calls; it
 //! never invents runtime behavior. Components are plain structs, systems are

@@ -1,4 +1,4 @@
-# zflecs
+# flecs
 
 Idiomatic Zig 0.16 bindings for the [flecs](https://github.com/SanderMertens/flecs)
 entity-component-system (flecs **v4.1.1**, fetched via `build.zig.zon`).
@@ -55,11 +55,11 @@ zig fetch --save git+https://github.com/zigsel/flecs
 Then wire the `flecs` module into your `build.zig`:
 
 ```zig
-const zflecs = b.dependency("zflecs", .{
+const flecs = b.dependency("flecs", .{
     .target = target,
     .optimize = optimize,
 });
-exe.root_module.addImport("flecs", zflecs.module("flecs"));
+exe.root_module.addImport("flecs", flecs.module("flecs"));
 ```
 
 That's all — the dependency pulls the flecs amalgamation from its own upstream
