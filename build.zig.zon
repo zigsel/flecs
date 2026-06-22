@@ -1,0 +1,18 @@
+.{
+    .name = .zflecs,
+    .version = "0.1.0",
+    .dependencies = .{
+        .flecs = .{
+            .url = "https://github.com/SanderMertens/flecs/archive/refs/tags/v4.1.1.tar.gz",
+            .hash = "N-V-__8AAJn_iQKpeeAdYDIPxLmQ3XVQWQEsD__dRvLzC9jf",
+        },
+    },
+    .fingerprint = 0xb539547bfca7ceba,
+    .minimum_zig_version = "0.16.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "examples",
+    },
+}
